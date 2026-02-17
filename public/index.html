@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Can You Think Like a Computer? | PyroTech Engineering Day</title>
+  <title>Can You Think Like a Computer? | Engineering Day 2026</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -101,6 +101,14 @@
     .btn-hint {
       background: rgba(255,204,0,0.08); color: #ffcc00;
       border: 1px solid rgba(255,204,0,0.2); font-weight: 600;
+      position: relative;
+    }
+    .btn-hint .hint-badge {
+      position: absolute; top: -6px; right: -6px;
+      background: #ffcc00; color: #000; font-size: 11px;
+      width: 20px; height: 20px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
     }
     .btn-giveup {
       background: rgba(255,68,102,0.08); color: #ff4466;
@@ -112,14 +120,23 @@
 
     /* Hints */
     .hints {
-      margin-top: 12px; padding: 12px 16px;
-      background: rgba(255,204,0,0.08);
+      margin-top: 12px; padding: 16px 20px;
+      background: rgba(255,204,0,0.06);
       border: 1px solid rgba(255,204,0,0.2);
-      border-radius: 10px; font-size: 14px; color: #ffcc00;
-      font-family: 'Space Mono', monospace;
+      border-radius: 12px; font-size: 14px; color: #ffcc00;
+      line-height: 1.6;
     }
-    .hints strong { margin-right: 8px; }
-    .hints span { margin-right: 12px; }
+    .hints .hint-item {
+      margin-bottom: 10px; padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,204,0,0.1);
+    }
+    .hints .hint-item:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+    .hints .hint-label {
+      font-family: 'Space Mono', monospace; font-size: 11px;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: rgba(255,204,0,0.6); margin-bottom: 4px;
+    }
+    .hints .hint-loading { color: rgba(255,204,0,0.5); font-style: italic; }
     .hints.hidden { display: none; }
 
     /* Game over banner */
@@ -159,7 +176,7 @@
     }
     .table.hidden { display: none; }
     .table-header {
-      display: grid; grid-template-columns: 60px 1fr 1fr 210px;
+      display: grid; grid-template-columns: 60px 1fr 1.2fr 210px;
       padding: 12px 20px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
       font-family: 'Space Mono', monospace;
@@ -170,7 +187,7 @@
     .table-header span:last-child { text-align: right; }
 
     .row {
-      display: grid; grid-template-columns: 60px 1fr 1fr 210px;
+      display: grid; grid-template-columns: 60px 1fr 1.2fr 210px;
       padding: 14px 20px; align-items: center;
       border-bottom: 1px solid rgba(255,255,255,0.04);
       transition: background 0.3s ease;
@@ -183,7 +200,7 @@
     }
     .row .word { font-size: 16px; font-weight: 600; color: #ddd; }
     .row.latest .word { color: #44ddff; }
-    .row .reason { font-size: 13px; color: #666; font-style: italic; }
+    .row .reason { font-size: 13px; color: #888; font-style: italic; }
 
     .score-bar-wrap { display: flex; justify-content: flex-end; }
     .score-bar {
@@ -274,7 +291,10 @@
         <div id="spinner" class="spinner" style="display:none;"></div>
       </div>
       <button id="submitBtn" class="btn btn-submit">Submit</button>
-      <button id="hintBtn" class="btn btn-hint">Hint</button>
+      <button id="hintBtn" class="btn btn-hint">
+        Hint
+        <span id="hintBadge" class="hint-badge" style="display:none;"></span>
+      </button>
       <button id="giveupBtn" class="btn btn-giveup">Give up</button>
       <button id="newgameBtn" class="btn btn-newgame" style="display:none;">New Game</button>
     </div>
@@ -289,7 +309,7 @@
   <div class="container table-wrap">
     <div id="table" class="table hidden">
       <div class="table-header">
-        <span>#</span><span>Guess</span><span>AI's reasoning</span><span>Similarity</span>
+        <span>#</span><span>Guess</span><span>AI Connection</span><span>Similarity</span>
       </div>
       <div id="rows"></div>
     </div>
@@ -317,52 +337,66 @@
   const SECRET_ANIMALS = [
     "pangolin","giraffe","tiger","chameleon","lion",
     "flamingo","octopus","gorilla","dog","penguin",
-    "dolphin","eagle","jaguar","raccoon","seahorse",
-    "deer","sloth","shark","pigeon","panda",
     "lion", "elephant", "cardinal", "robin", "cat", 
     "wolf", "fox", "horse", "cow", "pig", "goat",
+    "deer","sloth","shark","pigeon","panda",
+    "dolphin","eagle","jaguar","raccoon","seahorse",
     "fish", "bear", "hen", "duck", "frog", "camel"
   ];
 
   // ── STATE ──
   let secret = SECRET_ANIMALS[Math.floor(Math.random() * SECRET_ANIMALS.length)];
-  let guesses = [];    // { id, word, score, reason, num }
+  let guesses = [];
   let loading = false;
   let gameOver = false;
   let revealed = false;
-  let showHints = false;
   let latestId = null;
+  let hintLevel = 0;       // 0=none, 1=AI clue, 2=letter count, 3=first letter, 4=last letter
+  let cachedHint = null;    // AI directional hint, cached per game
+  let hintLoading = false;
 
   // ── ELEMENTS ──
   const $ = id => document.getElementById(id);
-  const input     = $("guessInput");
-  const submitBtn = $("submitBtn");
-  const hintBtn   = $("hintBtn");
-  const giveupBtn = $("giveupBtn");
-  const newgameBtn= $("newgameBtn");
-  const hintsEl   = $("hints");
-  const bannerEl  = $("banner");
-  const tableEl   = $("table");
-  const rowsEl    = $("rows");
-  const emptyEl   = $("empty");
-  const calloutEl = $("callout");
-  const statsEl   = $("stats");
-  const spinnerEl = $("spinner");
-  const dupWarnEl = $("duplicateWarn");
+  const input      = $("guessInput");
+  const submitBtn  = $("submitBtn");
+  const hintBtn    = $("hintBtn");
+  const hintBadge  = $("hintBadge");
+  const giveupBtn  = $("giveupBtn");
+  const newgameBtn = $("newgameBtn");
+  const hintsEl    = $("hints");
+  const bannerEl   = $("banner");
+  const tableEl    = $("table");
+  const rowsEl     = $("rows");
+  const emptyEl    = $("empty");
+  const calloutEl  = $("callout");
+  const statsEl    = $("stats");
+  const spinnerEl  = $("spinner");
+  const dupWarnEl  = $("duplicateWarn");
 
   // ── MODEL CONFIG via URL param ──
   const urlParams = new URLSearchParams(window.location.search);
-  const model = urlParams.get("model") === "sonnet" ? "sonnet" : "haiku"; // default haiku
+  const model = urlParams.get("model") === "sonnet" ? "sonnet" : "haiku";
 
-  // ── API ──
+  // ── API: score a guess ──
   async function getSimilarity(guess) {
     const res = await fetch("/api/similarity", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ guess, secret, model }),
+      body: JSON.stringify({ action: "score", guess, secret, model }),
     });
     if (!res.ok) throw new Error("API error");
-    return res.json(); // { score, reason }
+    return res.json();
+  }
+
+  // ── API: get AI directional hint ──
+  async function getAIHint() {
+    const res = await fetch("/api/similarity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "hint", secret, model }),
+    });
+    if (!res.ok) throw new Error("API error");
+    return res.json();
   }
 
   // ── SCORE COLOR ──
@@ -374,6 +408,64 @@
     return "#ff4466";
   }
 
+  // ── RENDER HINTS ──
+  function renderHints() {
+    if (hintLevel === 0) {
+      hintsEl.classList.add("hidden");
+      hintBadge.style.display = "none";
+      return;
+    }
+
+    hintsEl.classList.remove("hidden");
+    const remaining = 4 - hintLevel;
+    if (remaining > 0 && !gameOver) {
+      hintBadge.style.display = "flex";
+      hintBadge.textContent = remaining;
+    } else {
+      hintBadge.style.display = "none";
+    }
+
+    let html = "";
+
+    // Hint 1: AI directional clue
+    if (hintLevel >= 1) {
+      html += '<div class="hint-item">';
+      html += '<div class="hint-label">🤖 AI Clue</div>';
+      if (hintLoading) {
+        html += '<div class="hint-loading">Generating hint...</div>';
+      } else if (cachedHint) {
+        html += '<div>' + cachedHint + '</div>';
+      }
+      html += '</div>';
+    }
+
+    // Hint 2: Letter count
+    if (hintLevel >= 2) {
+      html += '<div class="hint-item">';
+      html += '<div class="hint-label">📏 Letter Count</div>';
+      html += '<div>The animal has <strong>' + secret.length + '</strong> letters.</div>';
+      html += '</div>';
+    }
+
+    // Hint 3: First letter
+    if (hintLevel >= 3) {
+      html += '<div class="hint-item">';
+      html += '<div class="hint-label">🔤 First Letter</div>';
+      html += '<div>It starts with <strong>"' + secret[0].toUpperCase() + '"</strong>.</div>';
+      html += '</div>';
+    }
+
+    // Hint 4: Last letter
+    if (hintLevel >= 4) {
+      html += '<div class="hint-item">';
+      html += '<div class="hint-label">🔤 Last Letter</div>';
+      html += '<div>It ends with <strong>"' + secret[secret.length - 1] + '"</strong>.</div>';
+      html += '</div>';
+    }
+
+    hintsEl.innerHTML = html;
+  }
+
   // ── RENDER ──
   function render() {
     // Buttons
@@ -383,19 +475,10 @@
     giveupBtn.style.display = gameOver ? "none" : "";
     newgameBtn.style.display = gameOver ? "" : "none";
     spinnerEl.style.display = loading ? "" : "none";
+    hintBtn.disabled = gameOver || hintLevel >= 4 || hintLoading;
 
     // Hints
-    if (showHints && guesses.length > 0) {
-      hintsEl.classList.remove("hidden");
-      let html = "<strong>HINTS:</strong>";
-      if (guesses.length >= 3) html += `<span>It has ${secret.length} letters.</span>`;
-      if (guesses.length >= 5) html += `<span>Starts with "${secret[0].toUpperCase()}".</span>`;
-      if (guesses.length >= 8) html += `<span>Ends with "${secret[secret.length-1]}".</span>`;
-      if (guesses.length < 3) html += `<span>Keep guessing to unlock hints! (3 guesses needed)</span>`;
-      hintsEl.innerHTML = html;
-    } else {
-      hintsEl.classList.add("hidden");
-    }
+    renderHints();
 
     // Banner
     if (gameOver) {
@@ -490,6 +573,32 @@
     if (!gameOver) input.focus();
   }
 
+  async function handleHint() {
+    if (gameOver || hintLevel >= 4 || hintLoading) return;
+
+    hintLevel++;
+
+    if (hintLevel === 1 && !cachedHint) {
+      // Fetch AI directional hint
+      hintLoading = true;
+      render();
+
+      try {
+        const data = await getAIHint();
+        cachedHint = data.hint;
+      } catch (err) {
+        console.error(err);
+        cachedHint = "Hint unavailable — try another approach!";
+      }
+
+      hintLoading = false;
+      render();
+    } else {
+      render();
+    }
+  }
+
+  // ── EVENT LISTENERS ──
   input.addEventListener("keydown", e => { if (e.key === "Enter") handleSubmit(); });
   input.addEventListener("input", () => {
     submitBtn.disabled = gameOver || loading || !input.value.trim();
@@ -502,12 +611,7 @@
     }
   });
   submitBtn.addEventListener("click", handleSubmit);
-
-  hintBtn.addEventListener("click", () => {
-    showHints = !showHints;
-    hintBtn.textContent = showHints ? "Hide Hints" : "Hint";
-    render();
-  });
+  hintBtn.addEventListener("click", handleHint);
 
   giveupBtn.addEventListener("click", () => {
     revealed = true;
@@ -520,9 +624,10 @@
     guesses = [];
     gameOver = false;
     revealed = false;
-    showHints = false;
     latestId = null;
-    hintBtn.textContent = "Hint";
+    hintLevel = 0;
+    cachedHint = null;
+    hintLoading = false;
     input.value = "";
     render();
     input.focus();
