@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Can You Think Like a Computer? | PyroTech Engineering Day</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a0f;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(40,100,255,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(0,255,136,0.03) 0%, transparent 50%);
+      color: #e8e8ec;
+      font-family: 'DM Sans', 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container { width: 100%; max-width: 900px; padding: 0 24px; }
+
+    /* Header */
+    .badge {
+      display: flex; align-items: center; gap: 12px;
+      margin-top: 40px; margin-bottom: 6px;
+    }
+    .badge-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #00ff88; box-shadow: 0 0 12px #00ff8844;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .badge-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; letter-spacing: 3px;
+      text-transform: uppercase; color: #00ff88;
+    }
+    h1 {
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 700; letter-spacing: -1px;
+      line-height: 1.1; margin: 8px 0 4px;
+    }
+    h1 .gradient {
+      background: linear-gradient(135deg, #44ddff, #00ff88);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-left: 10px;
+    }
+    .subtitle {
+      font-size: 15px; color: #888; max-width: 520px;
+      line-height: 1.6; margin-bottom: 28px;
+    }
+
+    /* Input row */
+    .input-row {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    }
+    .input-wrap {
+      flex: 1; min-width: 200px; position: relative;
+    }
+    .input-wrap input {
+      width: 100%; padding: 14px 18px; font-size: 17px;
+      font-family: 'DM Sans', sans-serif; font-weight: 500;
+      background: rgba(255,255,255,0.04);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px; color: #fff; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-wrap input:focus {
+      border-color: #44ddff55;
+      box-shadow: 0 0 20px rgba(68,221,255,0.08);
+    }
+    .input-wrap input::placeholder { color: #444; }
+    .input-wrap input:disabled { opacity: 0.5; }
+
+    .spinner {
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      width: 20px; height: 20px; border: 2px solid transparent;
+      border-top: 2px solid #44ddff; border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 14px 24px; font-size: 15px; font-weight: 700;
+      font-family: 'DM Sans', sans-serif; border: none;
+      border-radius: 12px; cursor: pointer; white-space: nowrap;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+    .btn:hover:not(:disabled) { transform: scale(1.03); }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #44ddff, #00cc88); color: #000;
+    }
+    .btn-submit:disabled {
+      background: rgba(255,255,255,0.05); color: #555;
+    }
+    .btn-hint {
+      background: rgba(255,204,0,0.08); color: #ffcc00;
+      border: 1px solid rgba(255,204,0,0.2); font-weight: 600;
+    }
+    .btn-giveup {
+      background: rgba(255,68,102,0.08); color: #ff4466;
+      border: 1px solid rgba(255,68,102,0.2); font-weight: 600;
+    }
+    .btn-newgame {
+      background: linear-gradient(135deg, #ff8844, #ff4466); color: #fff;
+    }
+
+    /* Hints */
+    .hints {
+      margin-top: 12px; padding: 12px 16px;
+      background: rgba(255,204,0,0.08);
+      border: 1px solid rgba(255,204,0,0.2);
+      border-radius: 10px; font-size: 14px; color: #ffcc00;
+      font-family: 'Space Mono', monospace;
+    }
+    .hints strong { margin-right: 8px; }
+    .hints span { margin-right: 12px; }
+    .hints.hidden { display: none; }
+
+    /* Game over banner */
+    .banner {
+      margin-top: 20px; padding: 20px 24px; border-radius: 14px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .banner.won {
+      background: rgba(0,255,136,0.06);
+      border: 1px solid rgba(0,255,136,0.2);
+    }
+    .banner.lost {
+      background: rgba(255,68,102,0.08);
+      border: 1px solid rgba(255,68,102,0.25);
+    }
+    .banner .emoji { font-size: 32px; }
+    .banner .title { font-weight: 700; font-size: 18px; }
+    .banner.won .title { color: #00ff88; }
+    .banner.lost .title { color: #ff6680; }
+    .banner .animal {
+      font-family: 'Space Mono', monospace;
+      font-size: 24px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 3px;
+      color: #fff; margin-top: 4px;
+    }
+    .banner .meta { font-size: 14px; color: #888; margin-top: 2px; }
+    .banner.hidden { display: none; }
+
+    /* Guess table */
+    .table-wrap {
+      margin-top: 20px; padding-bottom: 40px;
+    }
+    .table {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; overflow: hidden;
+    }
+    .table.hidden { display: none; }
+    .table-header {
+      display: grid; grid-template-columns: 60px 1fr 1fr 210px;
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-family: 'Space Mono', monospace;
+      font-size: 14px; letter-spacing: 2px;
+      text-transform: uppercase; color: #ddd;
+      font-weight: 700;
+    }
+    .table-header span:last-child { text-align: right; }
+
+    .row {
+      display: grid; grid-template-columns: 60px 1fr 1fr 210px;
+      padding: 14px 20px; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      transition: background 0.3s ease;
+    }
+    .row:last-child { border-bottom: none; }
+    .row.latest { background: rgba(68,221,255,0.04); }
+
+    .row .num {
+      font-family: 'Space Mono', monospace; font-size: 13px; color: #555;
+    }
+    .row .word { font-size: 16px; font-weight: 600; color: #ddd; }
+    .row.latest .word { color: #44ddff; }
+    .row .reason { font-size: 13px; color: #666; font-style: italic; }
+
+    .score-bar-wrap { display: flex; justify-content: flex-end; }
+    .score-bar {
+      position: relative; width: 200px; height: 32px;
+      background: rgba(255,255,255,0.06); border-radius: 6px;
+      overflow: hidden; border: 1px solid rgba(255,255,255,0.08);
+    }
+    .row.latest .score-bar { border-width: 2px; }
+    .score-bar .fill {
+      position: absolute; left: 0; top: 0; bottom: 0;
+      border-radius: 5px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+    }
+    .score-bar .value {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 15px; font-weight: 700; z-index: 1;
+    }
+
+    /* Empty state */
+    .empty {
+      text-align: center; padding: 60px 20px; color: #444;
+    }
+    .empty .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+    .empty .main { font-size: 16px; font-weight: 500; }
+    .empty .sub { font-size: 14px; color: #333; margin-top: 8px; }
+    .empty.hidden { display: none; }
+
+    /* Educational callout */
+    .callout {
+      margin-top: 16px; padding: 16px 20px;
+      background: rgba(68,221,255,0.04);
+      border: 1px solid rgba(68,221,255,0.1);
+      border-radius: 12px; font-size: 14px;
+      color: #88aacc; line-height: 1.6;
+    }
+    .callout strong { color: #44ddff; }
+    .callout.hidden { display: none; }
+
+    /* Stats */
+    .stats {
+      margin-top: 16px; display: flex; gap: 24px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px; color: #555;
+    }
+    .stats strong { color: #aaa; }
+    .stats.hidden { display: none; }
+
+    /* Duplicate warning */
+    .duplicate-warn {
+      margin-top: 8px; font-size: 13px; color: #ff8844;
+      font-style: italic; opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .duplicate-warn.show { opacity: 1; }
+
+    @keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    @media (max-width: 600px) {
+      .table-header, .row {
+        grid-template-columns: 40px 1fr 160px;
+      }
+      .row .reason, .table-header span:nth-child(3) { display: none; }
+      .score-bar { width: 150px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="badge">
+      <div class="badge-dot"></div>
+      <span class="badge-text">PyroTech Engineering Day</span>
+      <span id="modelBadge" class="badge-text" style="color:#666; margin-left:auto;"></span>
+    </div>
+    <h1>Can you think like a<span class="gradient">computer?</span></h1>
+    <p class="subtitle">
+      Guess the secret animal. The AI scores each guess from 0 to 1 based on
+      how <em>semantically similar</em> it thinks your word is. Learn how AI
+      connects concepts — not just animals, try any word!
+    </p>
+  </div>
+
+  <div class="container">
+    <div class="input-row">
+      <div class="input-wrap">
+        <input id="guessInput" type="text" placeholder="Type a word..." autocomplete="off" autofocus />
+        <div id="spinner" class="spinner" style="display:none;"></div>
+      </div>
+      <button id="submitBtn" class="btn btn-submit">Submit</button>
+      <button id="hintBtn" class="btn btn-hint">Hint</button>
+      <button id="giveupBtn" class="btn btn-giveup">Give up</button>
+      <button id="newgameBtn" class="btn btn-newgame" style="display:none;">New Game</button>
+    </div>
+    <div id="hints" class="hints hidden"></div>
+    <div id="duplicateWarn" class="duplicate-warn">You already guessed that word!</div>
+  </div>
+
+  <div class="container">
+    <div id="banner" class="banner hidden"></div>
+  </div>
+
+  <div class="container table-wrap">
+    <div id="table" class="table hidden">
+      <div class="table-header">
+        <span>#</span><span>Guess</span><span>AI's reasoning</span><span>Similarity</span>
+      </div>
+      <div id="rows"></div>
+    </div>
+
+    <div id="empty" class="empty">
+      <div class="icon">🔍</div>
+      <div class="main">Type any word to start guessing!</div>
+      <div class="sub">Try animal names, habitats, traits, or any word you think might be related.</div>
+    </div>
+
+    <div id="callout" class="callout hidden">
+      <strong>💡 Think like AI:</strong> Computers don't "see" animals — they understand
+      <em>relationships between concepts</em>. Try guessing habitats, traits, or categories
+      to triangulate! Words like "ocean", "stripes", or "nocturnal" can be just as useful as animal names.
+    </div>
+
+    <div id="stats" class="stats hidden">
+      <span>Guesses: <strong id="statCount">0</strong></span>
+      <span>Best: <strong id="statBest">0.00</strong></span>
+    </div>
+  </div>
+
+<script>
+  // ── CONFIG ──
+  const SECRET_ANIMALS = [
+    "pangolin","giraffe","tiger","chameleon","lion",
+    "flamingo","octopus","gorilla","dog","penguin",
+    "dolphin","eagle","jaguar","raccoon","seahorse",
+    "deer","sloth","shark","pigeon","panda",
+    "lion", "elephant", "cardinal", "robin", "cat", 
+    "wolf", "fox", "horse", "cow", "pig", "goat",
+    "fish", "bear", "hen", "duck", "frog", "camel"
+  ];
+
+  // ── STATE ──
+  let secret = SECRET_ANIMALS[Math.floor(Math.random() * SECRET_ANIMALS.length)];
+  let guesses = [];    // { id, word, score, reason, num }
+  let loading = false;
+  let gameOver = false;
+  let revealed = false;
+  let showHints = false;
+  let latestId = null;
+
+  // ── ELEMENTS ──
+  const $ = id => document.getElementById(id);
+  const input     = $("guessInput");
+  const submitBtn = $("submitBtn");
+  const hintBtn   = $("hintBtn");
+  const giveupBtn = $("giveupBtn");
+  const newgameBtn= $("newgameBtn");
+  const hintsEl   = $("hints");
+  const bannerEl  = $("banner");
+  const tableEl   = $("table");
+  const rowsEl    = $("rows");
+  const emptyEl   = $("empty");
+  const calloutEl = $("callout");
+  const statsEl   = $("stats");
+  const spinnerEl = $("spinner");
+  const dupWarnEl = $("duplicateWarn");
+
+  // ── MODEL CONFIG via URL param ──
+  const urlParams = new URLSearchParams(window.location.search);
+  const model = urlParams.get("model") === "sonnet" ? "sonnet" : "haiku"; // default haiku
+
+  // ── API ──
+  async function getSimilarity(guess) {
+    const res = await fetch("/api/similarity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guess, secret, model }),
+    });
+    if (!res.ok) throw new Error("API error");
+    return res.json(); // { score, reason }
+  }
+
+  // ── SCORE COLOR ──
+  function scoreColor(s) {
+    if (s >= 0.9) return "#00ff88";
+    if (s >= 0.7) return "#44ddff";
+    if (s >= 0.5) return "#ffcc00";
+    if (s >= 0.3) return "#ff8844";
+    return "#ff4466";
+  }
+
+  // ── RENDER ──
+  function render() {
+    // Buttons
+    submitBtn.disabled = gameOver || loading || !input.value.trim();
+    input.disabled = gameOver || loading;
+    input.placeholder = gameOver ? "Game over!" : "Type a word...";
+    giveupBtn.style.display = gameOver ? "none" : "";
+    newgameBtn.style.display = gameOver ? "" : "none";
+    spinnerEl.style.display = loading ? "" : "none";
+
+    // Hints
+    if (showHints && guesses.length > 0) {
+      hintsEl.classList.remove("hidden");
+      let html = "<strong>HINTS:</strong>";
+      if (guesses.length >= 3) html += `<span>It has ${secret.length} letters.</span>`;
+      if (guesses.length >= 5) html += `<span>Starts with "${secret[0].toUpperCase()}".</span>`;
+      if (guesses.length >= 8) html += `<span>Ends with "${secret[secret.length-1]}".</span>`;
+      if (guesses.length < 3) html += `<span>Keep guessing to unlock hints! (3 guesses needed)</span>`;
+      hintsEl.innerHTML = html;
+    } else {
+      hintsEl.classList.add("hidden");
+    }
+
+    // Banner
+    if (gameOver) {
+      bannerEl.classList.remove("hidden");
+      const won = !revealed;
+      bannerEl.className = `banner ${won ? "won" : "lost"}`;
+      bannerEl.innerHTML = `
+        <span class="emoji">${won ? "🎉" : "😮"}</span>
+        <div>
+          <div class="title">${won ? "You got it!" : "The secret animal was..."}</div>
+          <div class="animal">${secret}</div>
+          <div class="meta">${won
+            ? `Found in ${guesses.length} guess${guesses.length===1?"":"es"}!`
+            : `You made ${guesses.length} guess${guesses.length===1?"":"es"}.`}</div>
+        </div>`;
+    } else {
+      bannerEl.classList.add("hidden");
+    }
+
+    // Table
+    const sorted = [...guesses].sort((a,b) => b.score - a.score);
+    if (sorted.length > 0) {
+      tableEl.classList.remove("hidden");
+      emptyEl.classList.add("hidden");
+      rowsEl.innerHTML = sorted.map(g => {
+        const c = scoreColor(g.score);
+        const isLatest = g.id === latestId;
+        return `
+          <div class="row ${isLatest ? "latest" : ""}">
+            <span class="num">#${g.num}</span>
+            <span class="word">${g.word}</span>
+            <span class="reason">${g.reason}</span>
+            <div class="score-bar-wrap">
+              <div class="score-bar" style="border-color:${isLatest ? c : "rgba(255,255,255,0.08)"};">
+                <div class="fill" style="width:${g.score*100}%;background:linear-gradient(90deg,${c}22,${c}88);"></div>
+                <span class="value" style="color:${isLatest ? c : "#fff"};${isLatest ? `text-shadow:0 0 12px ${c}55`:""}">${g.score.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>`;
+      }).join("");
+    } else {
+      tableEl.classList.add("hidden");
+      if (!gameOver) emptyEl.classList.remove("hidden");
+      else emptyEl.classList.add("hidden");
+    }
+
+    // Callout
+    if (guesses.length >= 2 && !gameOver) calloutEl.classList.remove("hidden");
+    else calloutEl.classList.add("hidden");
+
+    // Stats
+    if (guesses.length > 0) {
+      statsEl.classList.remove("hidden");
+      const best = Math.max(...guesses.map(g => g.score));
+      $("statCount").textContent = guesses.length;
+      const bestEl = $("statBest");
+      bestEl.textContent = best.toFixed(2);
+      bestEl.style.color = best >= 0.7 ? "#00ff88" : best >= 0.4 ? "#ffcc00" : "#aaa";
+    } else {
+      statsEl.classList.add("hidden");
+    }
+  }
+
+  // ── HANDLERS ──
+  async function handleSubmit() {
+    const word = input.value.trim().toLowerCase();
+    if (!word || loading || gameOver) return;
+
+    if (guesses.some(g => g.word === word)) {
+      dupWarnEl.classList.add("show");
+      setTimeout(() => dupWarnEl.classList.remove("show"), 2000);
+      input.value = "";
+      return;
+    }
+
+    loading = true;
+    render();
+
+    try {
+      const { score, reason } = await getSimilarity(word);
+      const id = Date.now();
+      guesses.push({ id, word, score, reason, num: guesses.length + 1 });
+      latestId = id;
+      if (score >= 0.95) gameOver = true;
+    } catch (err) {
+      console.error(err);
+    }
+
+    input.value = "";
+    loading = false;
+    render();
+    if (!gameOver) input.focus();
+  }
+
+  input.addEventListener("keydown", e => { if (e.key === "Enter") handleSubmit(); });
+  input.addEventListener("input", () => {
+    submitBtn.disabled = gameOver || loading || !input.value.trim();
+    if (!input.value.trim()) {
+      submitBtn.style.background = "rgba(255,255,255,0.05)";
+      submitBtn.style.color = "#555";
+    } else {
+      submitBtn.style.background = "linear-gradient(135deg, #44ddff, #00cc88)";
+      submitBtn.style.color = "#000";
+    }
+  });
+  submitBtn.addEventListener("click", handleSubmit);
+
+  hintBtn.addEventListener("click", () => {
+    showHints = !showHints;
+    hintBtn.textContent = showHints ? "Hide Hints" : "Hint";
+    render();
+  });
+
+  giveupBtn.addEventListener("click", () => {
+    revealed = true;
+    gameOver = true;
+    render();
+  });
+
+  newgameBtn.addEventListener("click", () => {
+    secret = SECRET_ANIMALS[Math.floor(Math.random() * SECRET_ANIMALS.length)];
+    guesses = [];
+    gameOver = false;
+    revealed = false;
+    showHints = false;
+    latestId = null;
+    hintBtn.textContent = "Hint";
+    input.value = "";
+    render();
+    input.focus();
+  });
+
+  // Initial render
+  $("modelBadge").textContent = model === "sonnet" ? "⚡ Sonnet" : "⚡ Haiku";
+  render();
+</script>
+</body>
+</html>
