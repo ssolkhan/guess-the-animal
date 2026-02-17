@@ -21,19 +21,19 @@ function callAnthropic(apiKey, modelId, systemPrompt, userMessage) {
       },
     };
 
-    const req = https.request(options, (res) => {
+    const req = https.request(options, (response) => {
       let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => {
+      response.on("data", (chunk) => (data += chunk));
+      response.on("end", () => {
         try {
-          resolve({ status: res.statusCode, body: JSON.parse(data) });
+          resolve({ status: response.statusCode, body: JSON.parse(data) });
         } catch (e) {
-          reject(new Error("Failed to parse response: " + data));
+          reject(new Error("Failed to parse: " + data.substring(0, 500)));
         }
       });
     });
 
-    req.on("error", reject);
+    req.on("error", (e) => reject(e));
     req.write(body);
     req.end();
   });
@@ -44,31 +44,26 @@ module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
+  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  try {
+    const { guess, secret, model } = req.body || {};
 
-  const { guess, secret, model } = req.body;
+    if (!guess || !secret) {
+      return res.status(400).json({ error: "Missing guess or secret" });
+    }
 
-  if (!guess || !secret) {
-    return res.status(400).json({ error: "Missing guess or secret" });
-  }
+    const modelId = model === "sonnet"
+      ? "claude-sonnet-4-20250514"
+      : "claude-haiku-4-5-20251001";
 
-  const modelId = model === "sonnet"
-    ? "claude-sonnet-4-20250514"
-    : "claude-haiku-4-5-20241022";
+    const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+    if (!ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "API key not configured" });
+    }
 
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-
-  if (!ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: "API key not configured" });
-  }
-
-  const systemPrompt = `You are a semantic similarity scorer for an educational game where players guess a secret animal. Return ONLY a JSON object with "score" (0.00-1.00) and "reason" (max 15 words).
+    const systemPrompt = `You are a semantic similarity scorer for an educational game where players guess a secret animal. Return ONLY a JSON object with "score" (0.00-1.00) and "reason" (max 15 words).
 
 CRITICAL: The "reason" must NEVER name or directly hint at the secret word. But it SHOULD give useful directional clues to help the player get closer. Think of yourself as a "warmer/colder" guide.
 
@@ -99,20 +94,18 @@ Scoring guidelines:
 
 Respond ONLY with valid JSON, no markdown.`;
 
-  try {
     const result = await callAnthropic(
       ANTHROPIC_API_KEY,
       modelId,
       systemPrompt,
-      `Guess word: "${guess}"\nSecret word: "${secret}"`
+      'Guess word: "' + guess + '"\nSecret word: "' + secret + '"'
     );
 
     if (result.status !== 200) {
-      console.error("Anthropic API error:", result.body);
-      return res.status(result.status).json({ error: "API request failed" });
+      return res.status(502).json({ error: "API error", detail: result.body });
     }
 
-    const text = result.body.content.map((i) => i.text || "").join("");
+    const text = result.body.content.map(function(i) { return i.text || ""; }).join("");
     const clean = text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
 
@@ -121,7 +114,6 @@ Respond ONLY with valid JSON, no markdown.`;
       reason: parsed.reason || "",
     });
   } catch (err) {
-    console.error("Server error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Server error", detail: String(err) });
   }
 };
