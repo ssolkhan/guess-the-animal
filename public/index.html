@@ -176,7 +176,7 @@
     }
     .table.hidden { display: none; }
     .table-header {
-      display: grid; grid-template-columns: 60px 1fr 1.2fr 210px;
+      display: grid; grid-template-columns: 50px 1fr 210px 1.2fr;
       padding: 12px 20px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
       font-family: 'Space Mono', monospace;
@@ -184,10 +184,9 @@
       text-transform: uppercase; color: #ddd;
       font-weight: 700;
     }
-    .table-header span:last-child { text-align: right; }
 
     .row {
-      display: grid; grid-template-columns: 60px 1fr 1.2fr 210px;
+      display: grid; grid-template-columns: 50px 1fr 210px 1.2fr;
       padding: 14px 20px; align-items: center;
       border-bottom: 1px solid rgba(255,255,255,0.04);
       transition: background 0.3s ease;
@@ -200,7 +199,7 @@
     }
     .row .word { font-size: 16px; font-weight: 600; color: #ddd; }
     .row.latest .word { color: #44ddff; }
-    .row .reason { font-size: 13px; color: #888; font-style: italic; }
+    .row .reason { font-size: 12px; color: #666; font-style: italic; }
 
     .score-bar-wrap { display: flex; justify-content: flex-end; }
     .score-bar {
@@ -263,7 +262,7 @@
       .table-header, .row {
         grid-template-columns: 40px 1fr 140px;
       }
-      .row .reason, { font-size: 11px; }
+      .row .reason, .table-header span:nth-child(4) { display: none; }
       .score-bar { width: 130px; }
     }
   </style>
@@ -273,12 +272,12 @@
   <div class="container">
     <div class="badge">
       <div class="badge-dot"></div>
-      <span class="badge-text">Engineering Day 2026</span>
+      <span class="badge-text">PyroTech Engineering Day</span>
       <span id="modelBadge" class="badge-text" style="color:#666; margin-left:auto;"></span>
     </div>
     <h1>Can you think like a<span class="gradient">computer?</span></h1>
     <p class="subtitle">
-      Guess the secret animal. The AI scores each guess from 0 to 1 based on
+      Guess the secret animal. The AI scores each guess from 1 to 10 based on
       how <em>semantically similar</em> it thinks your word is. Learn how AI
       connects concepts — not just animals, try any word!
     </p>
@@ -309,7 +308,7 @@
   <div class="container table-wrap">
     <div id="table" class="table hidden">
       <div class="table-header">
-        <span>#</span><span>Guess</span><span>AI Connection</span><span>Similarity</span>
+        <span>#</span><span>Guess</span><span>Similarity</span><span>AI Connection</span>
       </div>
       <div id="rows"></div>
     </div>
@@ -401,10 +400,10 @@
 
   // ── SCORE COLOR ──
   function scoreColor(s) {
-    if (s >= 0.9) return "#00ff88";
-    if (s >= 0.7) return "#44ddff";
-    if (s >= 0.5) return "#ffcc00";
-    if (s >= 0.3) return "#ff8844";
+    if (s >= 9) return "#00ff88";
+    if (s >= 7) return "#44ddff";
+    if (s >= 5) return "#ffcc00";
+    if (s >= 3) return "#ff8844";
     return "#ff4466";
   }
 
@@ -510,13 +509,13 @@
           <div class="row ${isLatest ? "latest" : ""}">
             <span class="num">#${g.num}</span>
             <span class="word">${g.word}</span>
-            <span class="reason">${g.reason}</span>
             <div class="score-bar-wrap">
               <div class="score-bar" style="border-color:${isLatest ? c : "rgba(255,255,255,0.08)"};">
-                <div class="fill" style="width:${g.score*100}%;background:linear-gradient(90deg,${c}22,${c}88);"></div>
-                <span class="value" style="color:${isLatest ? c : "#fff"};${isLatest ? `text-shadow:0 0 12px ${c}55`:""}">${g.score.toFixed(2)}</span>
+                <div class="fill" style="width:${g.score*10}%;background:linear-gradient(90deg,${c}22,${c}88);"></div>
+                <span class="value" style="color:${isLatest ? c : "#fff"};${isLatest ? `text-shadow:0 0 12px ${c}55`:""}">${g.score}/10</span>
               </div>
             </div>
+            <span class="reason">${g.reason}</span>
           </div>`;
       }).join("");
     } else {
@@ -535,8 +534,8 @@
       const best = Math.max(...guesses.map(g => g.score));
       $("statCount").textContent = guesses.length;
       const bestEl = $("statBest");
-      bestEl.textContent = best.toFixed(2);
-      bestEl.style.color = best >= 0.7 ? "#00ff88" : best >= 0.4 ? "#ffcc00" : "#aaa";
+      bestEl.textContent = best + "/10";
+      bestEl.style.color = best >= 7 ? "#00ff88" : best >= 4 ? "#ffcc00" : "#aaa";
     } else {
       statsEl.classList.add("hidden");
     }
@@ -562,7 +561,7 @@
       const id = Date.now();
       guesses.push({ id, word, score, reason, num: guesses.length + 1 });
       latestId = id;
-      if (score >= 0.95) gameOver = true;
+      if (score >= 10) gameOver = true;
     } catch (err) {
       console.error(err);
     }

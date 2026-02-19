@@ -87,14 +87,14 @@ function stripSecret(text, secret) {
 
 // Fallback reasons by score range (used if AI leaks the secret)
 var FALLBACK_REASONS = [
-  { min: 0.95, reasons: ["Exact match — you got it!", "That's the one!"] },
-  { min: 0.85, reasons: ["Almost the same animal!", "Extremely close — nearly identical!"] },
-  { min: 0.70, reasons: ["Close relatives — same family!", "Very closely related animals!"] },
-  { min: 0.55, reasons: ["Same group of animals!", "Related — in the same bigger family!"] },
-  { min: 0.40, reasons: ["Same type of animal, but pretty different", "Some things in common!"] },
-  { min: 0.25, reasons: ["A little bit connected", "Weak connection — keep exploring!"] },
-  { min: 0.10, reasons: ["Barely related — very different!", "Not much in common at all"] },
-  { min: 0.00, reasons: ["Totally different — nothing in common!", "No connection found!"] },
+  { min: 10, reasons: ["Exact match — you got it!", "That's the one!"] },
+  { min: 9, reasons: ["Almost the same animal!", "Extremely close — nearly identical!"] },
+  { min: 8, reasons: ["Close relatives — same family!", "Very closely related animals!"] },
+  { min: 6, reasons: ["Same group of animals!", "Related — in the same bigger family!"] },
+  { min: 4, reasons: ["Same type of animal, but pretty different", "Some things in common!"] },
+  { min: 3, reasons: ["A little bit connected", "Weak connection — keep exploring!"] },
+  { min: 2, reasons: ["Barely related — very different!", "Not much in common at all"] },
+  { min: 1, reasons: ["Totally different — nothing in common!", "No connection found!"] },
 ];
 
 function getFallbackReason(score) {
@@ -150,9 +150,10 @@ var SCORE_PROMPT = [
   '- "Dolphins are mammals too" — NAMES THE TARGET! FORBIDDEN!',
   '- "One is a tiger, the other is a bird" — NAMES THE TARGET! FORBIDDEN!',
   '',
-  'Scoring: 1.00=exact match, 0.85-0.99=basically the same, 0.70-0.84=close relatives,',
-  '0.55-0.69=same group, 0.40-0.54=same type, 0.25-0.39=weak connection,',
-  '0.10-0.24=barely related, 0.01-0.09=nothing in common.',
+  'Scoring: use a scale from 1 to 10 (integers only, no decimals).',
+  '10=exact match, 9=basically the same animal, 8=close relatives,',
+  '6-7=same group, 4-5=same type of animal, 2-3=weak connection,',
+  '1=nothing in common.',
   '',
   'JSON only. No markdown. No backticks.'
 ].join('\n');
@@ -255,7 +256,7 @@ module.exports = async function handler(req, res) {
       var clean = text.replace(/```json|```/g, "").trim();
       var parsed = JSON.parse(clean);
 
-      var score = Math.min(1, Math.max(0, parseFloat(parsed.score.toFixed(2))));
+      var score = Math.min(10, Math.max(1, Math.round(parseFloat(parsed.score))));
       var reason = parsed.reason || "";
 
       // ============================================================
