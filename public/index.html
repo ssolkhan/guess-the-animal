@@ -21,7 +21,7 @@
       align-items: center;
     }
 
-    .container { width: 100%; max-width: 900px; padding: 0 24px; }
+    .container { width: 100%; max-width: 1000px; padding: 0 24px; }
 
     /* Header */
     .badge {
@@ -49,7 +49,7 @@
       margin-left: 10px;
     }
     .subtitle {
-      font-size: 15px; color: #888; max-width: 520px;
+      font-size: 17px; color: #b8b8c4; max-width: 600px;
       line-height: 1.6; margin-bottom: 28px;
     }
 
@@ -72,7 +72,7 @@
       border-color: #44ddff55;
       box-shadow: 0 0 20px rgba(68,221,255,0.08);
     }
-    .input-wrap input::placeholder { color: #444; }
+    .input-wrap input::placeholder { color: #777; }
     .input-wrap input:disabled { opacity: 0.5; }
 
     .spinner {
@@ -123,7 +123,7 @@
       margin-top: 12px; padding: 16px 20px;
       background: rgba(255,204,0,0.06);
       border: 1px solid rgba(255,204,0,0.2);
-      border-radius: 12px; font-size: 14px; color: #ffcc00;
+      border-radius: 12px; font-size: 16px; color: #ffcc00;
       line-height: 1.6;
     }
     .hints .hint-item {
@@ -134,7 +134,7 @@
     .hints .hint-label {
       font-family: 'Space Mono', monospace; font-size: 11px;
       letter-spacing: 1px; text-transform: uppercase;
-      color: rgba(255,204,0,0.6); margin-bottom: 4px;
+      color: rgba(255,204,0,0.85); margin-bottom: 4px;
     }
     .hints .hint-loading { color: rgba(255,204,0,0.5); font-style: italic; }
     .hints.hidden { display: none; }
@@ -162,7 +162,7 @@
       text-transform: uppercase; letter-spacing: 3px;
       color: #fff; margin-top: 4px;
     }
-    .banner .meta { font-size: 14px; color: #888; margin-top: 2px; }
+    .banner .meta { font-size: 14px; color: #b8b8c4; margin-top: 2px; }
     .banner.hidden { display: none; }
 
     /* Guess table */
@@ -176,7 +176,7 @@
     }
     .table.hidden { display: none; }
     .table-header {
-      display: grid; grid-template-columns: 50px 1fr 210px 1.2fr; column-gap: 20px;
+      display: grid; grid-template-columns: 50px 0.8fr 210px 1.7fr; column-gap: 20px;
       padding: 12px 20px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
       font-family: 'Space Mono', monospace;
@@ -186,7 +186,7 @@
     }
 
     .row {
-      display: grid; grid-template-columns: 50px 1fr 210px 1.2fr; column-gap: 20px;
+      display: grid; grid-template-columns: 50px 0.8fr 210px 1.7fr; column-gap: 20px;
       padding: 14px 20px; align-items: center;
       border-bottom: 1px solid rgba(255,255,255,0.04);
       transition: background 0.3s ease;
@@ -195,11 +195,14 @@
     .row.latest { background: rgba(68,221,255,0.04); }
 
     .row .num {
-      font-family: 'Space Mono', monospace; font-size: 13px; color: #555;
+      font-family: 'Space Mono', monospace; font-size: 15px; color: #8a8a96;
     }
-    .row .word { font-size: 16px; font-weight: 600; color: #ddd; }
+    .row .word { font-size: 19px; font-weight: 600; color: #ddd; }
     .row.latest .word { color: #44ddff; }
-    .row .reason { font-size: 12px; color: #666; font-style: italic; }
+    .row .reason {
+      font-size: 17px; color: #ffffff; line-height: 1.5;
+      border-left: 3px solid rgba(255,255,255,0.15); padding-left: 12px;
+    }
 
     .score-bar-wrap { display: flex; justify-content: flex-end; }
     .score-bar {
@@ -220,11 +223,11 @@
 
     /* Empty state */
     .empty {
-      text-align: center; padding: 60px 20px; color: #444;
+      text-align: center; padding: 60px 20px; color: #8a8a96;
     }
     .empty .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
     .empty .main { font-size: 16px; font-weight: 500; }
-    .empty .sub { font-size: 14px; color: #333; margin-top: 8px; }
+    .empty .sub { font-size: 14px; color: #6e6e7a; margin-top: 8px; }
     .empty.hidden { display: none; }
 
     /* Educational callout */
@@ -232,8 +235,8 @@
       margin-top: 16px; padding: 16px 20px;
       background: rgba(68,221,255,0.04);
       border: 1px solid rgba(68,221,255,0.1);
-      border-radius: 12px; font-size: 14px;
-      color: #88aacc; line-height: 1.6;
+      border-radius: 12px; font-size: 16px;
+      color: #c0d8ee; line-height: 1.6;
     }
     .callout strong { color: #44ddff; }
     .callout.hidden { display: none; }
@@ -242,9 +245,9 @@
     .stats {
       margin-top: 16px; display: flex; gap: 24px;
       font-family: 'Space Mono', monospace;
-      font-size: 12px; color: #555;
+      font-size: 15px; color: #9a9aa6;
     }
-    .stats strong { color: #aaa; }
+    .stats strong { color: #e8e8ec; }
     .stats.hidden { display: none; }
 
     /* Duplicate warning */
@@ -273,7 +276,7 @@
     <div class="badge">
       <div class="badge-dot"></div>
       <span class="badge-text">Engineering Day 2026</span>
-      <span id="modelBadge" class="badge-text" style="color:#666; margin-left:auto;"></span>
+      <span id="modelBadge" class="badge-text" style="color:#9a9aa6; margin-left:auto;"></span>
     </div>
     <h1>Can you think like a<span class="gradient">computer?</span></h1>
     <p class="subtitle">
@@ -334,17 +337,35 @@
 <script>
   // ── CONFIG ──
   const SECRET_ANIMALS = [
-    "pangolin","giraffe","tiger","chameleon","lion",
+    "giraffe","tiger","snake","lion",
     "flamingo","octopus","gorilla","dog","penguin",
-    "lion", "elephant", "cardinal", "robin", "cat", 
+    "elephant", "cardinal", "robin", "cat", 
     "wolf", "fox", "horse", "cow", "pig", "goat",
     "deer","sloth","shark","pigeon","panda",
-    "dolphin","eagle","jaguar","raccoon","seahorse",
-    "fish", "bear", "hen", "duck", "frog", "camel"
+    "dolphin","eagle","jaguar","seahorse",
+    "fish", "bear", "hen", "duck", "frog", "camel",
+    "rabbit", "mouse", "monkey", "zebra", "kangaroo", "sheep", "whale",
+    "owl", "parrot", "peacock", "crow", "hummingbird",
+    "bee", "butterfly", "ant", "spider", "crocodile"
   ];
 
   // ── STATE ──
-  let secret = SECRET_ANIMALS[Math.floor(Math.random() * SECRET_ANIMALS.length)];
+  // Deduplicate and shuffle the animal list
+  let animalPool = [...new Set(SECRET_ANIMALS)];
+  let poolIndex = 0;
+  function shufflePool() {
+    for (let i = animalPool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [animalPool[i], animalPool[j]] = [animalPool[j], animalPool[i]];
+    }
+    poolIndex = 0;
+  }
+  function nextAnimal() {
+    if (poolIndex >= animalPool.length) shufflePool();
+    return animalPool[poolIndex++];
+  }
+  shufflePool();
+  let secret = nextAnimal();
   let guesses = [];
   let loading = false;
   let gameOver = false;
@@ -515,7 +536,7 @@
                 <span class="value" style="color:${isLatest ? c : "#fff"};${isLatest ? `text-shadow:0 0 12px ${c}55`:""}">${g.score}/10</span>
               </div>
             </div>
-            <span class="reason">${g.reason}</span>
+            <span class="reason" style="border-left-color:${c};">${g.reason}</span>
           </div>`;
       }).join("");
     } else {
@@ -535,7 +556,7 @@
       $("statCount").textContent = guesses.length;
       const bestEl = $("statBest");
       bestEl.textContent = best + "/10";
-      bestEl.style.color = best >= 7 ? "#00ff88" : best >= 4 ? "#ffcc00" : "#aaa";
+      bestEl.style.color = best >= 7 ? "#00ff88" : best >= 4 ? "#ffcc00" : "#e8e8ec";
     } else {
       statsEl.classList.add("hidden");
     }
@@ -619,7 +640,7 @@
   });
 
   newgameBtn.addEventListener("click", () => {
-    secret = SECRET_ANIMALS[Math.floor(Math.random() * SECRET_ANIMALS.length)];
+    secret = nextAnimal();
     guesses = [];
     gameOver = false;
     revealed = false;
