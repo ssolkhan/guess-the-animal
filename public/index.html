@@ -568,6 +568,7 @@
     if (!word || loading || gameOver) return;
 
     if (guesses.some(g => g.word === word)) {
+      dupWarnEl.textContent = "You already guessed that word!";
       dupWarnEl.classList.add("show");
       setTimeout(() => dupWarnEl.classList.remove("show"), 2000);
       input.value = "";
@@ -585,6 +586,9 @@
       if (score >= 10) gameOver = true;
     } catch (err) {
       console.error(err);
+      dupWarnEl.textContent = "Couldn't score that word — the AI didn't respond. Please try again.";
+      dupWarnEl.classList.add("show");
+      setTimeout(() => dupWarnEl.classList.remove("show"), 4000);
     }
 
     input.value = "";

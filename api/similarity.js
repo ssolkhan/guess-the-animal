@@ -2,12 +2,15 @@ var https = require("https");
 
 function callAnthropic(apiKey, modelId, systemPrompt, userMessage) {
   return new Promise(function (resolve, reject) {
-    var body = JSON.stringify({
+    var payload = {
       model: modelId,
-      max_tokens: 256,
+      max_tokens: 1024,
       system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],
-    });
+    };
+    // Sonnet 5.5 reasons before answering by default; turn that off to keep guesses fast
+    if (modelId.indexOf("sonnet") !== -1) payload.thinking = { type: "between_tools" };
+    var body = JSON.stringify(payload);
 
     var options = {
       hostname: "api.anthropic.com",
@@ -214,7 +217,7 @@ module.exports = async function handler(req, res) {
     var model = body.model;
 
     var modelId = model === "sonnet"
-      ? "claude-sonnet-4-20250514"
+      ? "claude-sonnet-5-5"
       : "claude-haiku-4-5-20251001";
 
     var ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -232,6 +235,7 @@ module.exports = async function handler(req, res) {
       );
 
       if (result.status !== 200) {
+        console.error("Anthropic API error", modelId, result.status, JSON.stringify(result.body));
         return res.status(502).json({ error: "API error", detail: result.body });
       }
 
@@ -262,6 +266,7 @@ module.exports = async function handler(req, res) {
       );
 
       if (result.status !== 200) {
+        console.error("Anthropic API error", modelId, result.status, JSON.stringify(result.body));
         return res.status(502).json({ error: "API error", detail: result.body });
       }
 
